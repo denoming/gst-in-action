@@ -15,7 +15,14 @@ target_sources(${TARGET}
         basic01.cpp
 )
 
-target_compile_features(${TARGET} PRIVATE cxx_std_17)
+target_link_libraries(${TARGET}
+    PRIVATE PkgConfig::GStreamer
+            PkgConfig::GStreamerBase
+            PkgConfig::GStreamerPluginsBase
+            PkgConfig::GStreamerPluginsBad
+)
+
+target_compile_features(${TARGET} PRIVATE cxx_std_20)
 
 install(
     TARGETS ${TARGET}
