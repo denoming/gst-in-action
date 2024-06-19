@@ -19,7 +19,17 @@ main(int argc, char* argv[])
     gst_init(&argc, &argv);
 
     /* Build the pipeline */
-    pipeline = gst_parse_launch(kDescription, nullptr);
+    GError* err{};
+    pipeline = gst_parse_launch(kDescription, &err);
+    if (err != nullptr) {
+        gchar* debugInfo{};
+        gst_message_parse_error(msg, &err, &debugInfo);
+        g_printerr("Error on parsing pipeline %s: %s\n", GST_OBJECT_NAME(msg->src), err->message);
+        g_printerr("Debugging information: %s\n", debugInfo ? debugInfo : "none");
+        g_clear_error(&err);
+        g_free(debugInfo);
+        return EXIT_FAILURE;
+    }
 
     /* Start playing */
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
