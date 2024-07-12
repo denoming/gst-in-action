@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-#include <gst/gst.h>
-
 using namespace std;
 
 /**
