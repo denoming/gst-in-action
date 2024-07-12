@@ -4,4 +4,5 @@ add_subdirectory(basic03)
 add_subdirectory(basic04)
 add_subdirectory(basic05)
 add_subdirectory(basic06)
+add_subdirectory(basic07)
 
