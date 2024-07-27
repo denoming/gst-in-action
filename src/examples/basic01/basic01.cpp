@@ -1,8 +1,8 @@
+#include <gst/gst.h>
+
 #include <iostream>
 
 using namespace std;
-
-#include <gst/gst.h>
 
 static const char* kDescription = R"(
     playbin uri=https://gstreamer.freedesktop.org/data/media/sintel_trailer-480p.webm
