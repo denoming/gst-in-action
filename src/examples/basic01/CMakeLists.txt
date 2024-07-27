@@ -16,6 +16,7 @@ target_sources(${TARGET}
 )
 
 target_link_libraries(${TARGET}
+    PRIVATE Gst::Common
     PRIVATE PkgConfig::GStreamer
             PkgConfig::GStreamerBase
             PkgConfig::GStreamerPluginsBase
