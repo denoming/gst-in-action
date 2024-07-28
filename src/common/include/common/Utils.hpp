@@ -2,3 +2,6 @@
 
 void
 printVersion();
+
+void
+printAllFactories();

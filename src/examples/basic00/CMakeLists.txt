@@ -1,25 +1,22 @@
 include(GNUInstallDirs)
 
-set(TARGET Basic01)
+set(TARGET Basic00)
 
 add_executable(${TARGET} "")
-add_executable(Gst::Basic01 ALIAS ${TARGET})
+add_executable(Gst::Basic00 ALIAS ${TARGET})
 
 set_target_properties(${TARGET}
     PROPERTIES
-    OUTPUT_NAME basic01
+    OUTPUT_NAME basic00
 )
 
 target_sources(${TARGET}
     PRIVATE
-        basic01.cpp
+        basic00.cpp
 )
 
 target_link_libraries(${TARGET}
-    PRIVATE PkgConfig::GStreamer
-            PkgConfig::GStreamerBase
-            PkgConfig::GStreamerPluginsBase
-            PkgConfig::GStreamerPluginsBad
+    PRIVATE Gst::Common
 )
 
 target_compile_features(${TARGET} PRIVATE cxx_std_20)

@@ -1,5 +1,3 @@
-#include "common/Utils.hpp"
-
 #include <gst/gst.h>
 
 #include <iostream>
@@ -19,9 +17,6 @@ main(int argc, char* argv[])
 
     /* Initialize GStreamer */
     gst_init(&argc, &argv);
-
-    /* Print GStreamer version */
-    printVersion();
 
     /* Build the pipeline */
     GError* err{};
