@@ -9,4 +9,4 @@ void
 printAllFactories();
 
 void
-printTags(const std::filesystem::path& path);
+printAllStreamTags(const std::filesystem::path& path);

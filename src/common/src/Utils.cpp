@@ -80,7 +80,7 @@ printAllFactories()
 }
 
 void
-printTags(const std::filesystem::path& path)
+printAllStreamTags(const std::filesystem::path& path)
 {
     gchar* uri{};
     if (gst_uri_is_valid(path.c_str())) {
