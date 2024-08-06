@@ -20,6 +20,7 @@ target_link_libraries(${TARGET}
             PkgConfig::GStreamerBase
             PkgConfig::GStreamerPluginsBase
             PkgConfig::GStreamerPluginsBad
+    PRIVATE Gst::Common
 )
 
 target_compile_features(${TARGET} PRIVATE cxx_std_20)

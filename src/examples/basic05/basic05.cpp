@@ -2,109 +2,13 @@
 
 #include <iostream>
 
+#include "common/Utils.hpp"
+
 using namespace std;
 
 /**
  * Media formats and pad capabilities
  **/
-
-/* Functions below print the capabilities in a human-friendly format */
-static gboolean
-printField(GQuark field, const GValue* value, gpointer pfx)
-{
-    gchar* str = gst_value_serialize(value);
-    g_print("%s  %15s: %s\n", (gchar*) pfx, g_quark_to_string(field), str);
-    g_free(str);
-    return TRUE;
-}
-
-static void
-printCaps(const GstCaps* caps, const gchar* pfx)
-{
-    g_return_if_fail(caps != NULL);
-
-    if (gst_caps_is_any(caps)) {
-        g_print("%sANY\n", pfx);
-        return;
-    }
-    if (gst_caps_is_empty(caps)) {
-        g_print("%sEMPTY\n", pfx);
-        return;
-    }
-
-    for (guint i = 0; i < gst_caps_get_size(caps); i++) {
-        GstStructure* structure = gst_caps_get_structure(caps, i);
-        g_print("%s%s\n", pfx, gst_structure_get_name(structure));
-        gst_structure_foreach(structure, printField, (gpointer) pfx);
-    }
-}
-
-/* Prints information about a pad template, including its capabilities */
-static void
-printPadTemplatesInfo(GstElementFactory* factory)
-{
-    g_print("Pad Templates for %s:\n", gst_element_factory_get_longname(factory));
-    if (!gst_element_factory_get_num_pad_templates(factory)) {
-        g_print("  none\n");
-        return;
-    }
-
-    const GList* pads = gst_element_factory_get_static_pad_templates(factory);
-    while (pads) {
-        auto* padTemplate = static_cast<GstStaticPadTemplate*>(pads->data);
-        pads = g_list_next(pads);
-
-        if (padTemplate->direction == GST_PAD_SRC)
-            g_print("  SRC template: '%s'\n", padTemplate->name_template);
-        else if (padTemplate->direction == GST_PAD_SINK)
-            g_print("  SINK template: '%s'\n", padTemplate->name_template);
-        else
-            g_print("  Unknown template: '%s'\n", padTemplate->name_template);
-
-        if (padTemplate->presence == GST_PAD_ALWAYS)
-            g_print("    Availability: Always\n");
-        else if (padTemplate->presence == GST_PAD_SOMETIMES)
-            g_print("    Availability: Sometimes\n");
-        else if (padTemplate->presence == GST_PAD_REQUEST)
-            g_print("    Availability: On request\n");
-        else
-            g_print("    Availability: Unknown\n");
-
-        if (padTemplate->static_caps.string) {
-            GstCaps* caps;
-            g_print("    Capabilities:\n");
-            caps = gst_static_caps_get(&padTemplate->static_caps);
-            printCaps(caps, "      ");
-            gst_caps_unref(caps);
-        }
-
-        g_print("\n");
-    }
-}
-
-/* Shows the CURRENT capabilities of the requested pad in the given element */
-static void
-printPadCaps(GstElement* element, const gchar* padName)
-{
-    /* Retrieve pad */
-    GstPad* pad = gst_element_get_static_pad(element, padName);
-    if (not pad) {
-        g_printerr("Could not retrieve pad '%s'\n", padName);
-        return;
-    }
-
-    /* Retrieve negotiated caps (or acceptable caps if negotiation is not finished yet) */
-    GstCaps* caps = gst_pad_get_current_caps(pad);
-    if (not caps) {
-        caps = gst_pad_query_caps(pad, nullptr);
-    }
-
-    /* Print and free */
-    g_print("Caps for the %s pad:\n", padName);
-    printCaps(caps, "      ");
-    gst_caps_unref(caps);
-    gst_object_unref(pad);
-}
 
 int
 main(int argc, char* argv[])
@@ -117,9 +21,9 @@ main(int argc, char* argv[])
     /* Create the element factories */
     GstElementFactory* sourceFactory = gst_element_factory_find("audiotestsrc");
     GstElementFactory* sinkFactory = gst_element_factory_find("autoaudiosink");
-    if (!sourceFactory || !sinkFactory) {
+    if (!sourceFactory or not sinkFactory) {
         g_printerr("Not all element factories could be created.\n");
-        return -1;
+        return EXIT_FAILURE;
     }
 
     /* Print information about the pad templates of these factories */
@@ -133,9 +37,9 @@ main(int argc, char* argv[])
     /* Create the empty pipeline */
     GstElement* pipeline = gst_pipeline_new("test-pipeline");
 
-    if (!pipeline || !source || !sink) {
+    if (not pipeline or not source or not sink) {
         g_printerr("Not all elements could be created.\n");
-        return -1;
+        return EXIT_FAILURE;
     }
 
     /* Build the pipeline */
@@ -143,12 +47,12 @@ main(int argc, char* argv[])
     if (gst_element_link(source, sink) != TRUE) {
         g_printerr("Elements could not be linked.\n");
         gst_object_unref(pipeline);
-        return -1;
+        return EXIT_FAILURE;
     }
 
     /* Print initial negotiated caps (in NULL state) */
     g_print("In NULL state:\n");
-    printPadCaps(sink, "sink");
+    printAllPadCaps(sink, "sink");
 
     /* Start playing */
     if (gst_element_set_state(pipeline, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE) {
@@ -194,19 +98,18 @@ main(int argc, char* argv[])
                             gst_element_state_get_name(oldState),
                             gst_element_state_get_name(newState));
                     /* Print the current capabilities of the sink element */
-                    printPadCaps(sink, "sink");
+                    printAllPadCaps(sink, "sink");
                 }
                 break;
             default:
-                /* We should not reach here because we only asked for ERRORs, EOS and STATE_CHANGED
-                 */
+                /* We should not reach here */
                 g_printerr("Unexpected message received.\n");
                 break;
             }
             gst_message_unref(msg);
         }
     }
-    while (!terminate);
+    while (not terminate);
 
     /* Free resources */
     gst_object_unref(bus);
@@ -214,5 +117,6 @@ main(int argc, char* argv[])
     gst_object_unref(pipeline);
     gst_object_unref(sourceFactory);
     gst_object_unref(sinkFactory);
-    return 0;
+
+    return EXIT_SUCCESS;
 }

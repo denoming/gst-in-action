@@ -5,7 +5,7 @@
 namespace {
 
 void
-printFeature(GstPluginFeature* feature, void* data)
+printRegistryFeature(GstPluginFeature* feature, void* /*data*/)
 {
     const gchar* name = gst_plugin_feature_get_name(feature);
     if (name != nullptr) {
@@ -14,7 +14,7 @@ printFeature(GstPluginFeature* feature, void* data)
 }
 
 void
-onGettingTagsPadAdded(GstElement* dec, GstPad* pad, GstElement* sink)
+onGettingStreamTagsPadAdded(GstElement* dec, GstPad* pad, GstElement* sink)
 {
     GstPad* sinkpad = gst_element_get_static_pad(sink, "sink");
     if (not gst_pad_is_linked(sinkpad)) {
@@ -26,10 +26,10 @@ onGettingTagsPadAdded(GstElement* dec, GstPad* pad, GstElement* sink)
 }
 
 void
-printOneTag(const GstTagList* list, const gchar* tag, gpointer data)
+printOneStreamTag(const GstTagList* list, const gchar* tag, gpointer data)
 {
-    const int num = gst_tag_list_get_tag_size(list, tag);
-    for (int i = 0; i < num; ++i) {
+    const guint tagSize = gst_tag_list_get_tag_size(list, tag);
+    for (int i = 0; i < tagSize; ++i) {
         const GValue* val{};
         /* Note: when looking for specific tags, use the gst_tag_list_get_xyz() API,
          * we only use the GValue approach here because it is more generic */
@@ -47,13 +47,43 @@ printOneTag(const GstTagList* list, const gchar* tag, gpointer data)
             guint bufferSize = gst_buffer_get_size(buffer);
             g_print("\t%20s : buffer of size %u\n", tag, bufferSize);
         } else if (GST_VALUE_HOLDS_DATE_TIME(val)) {
-            GstDateTime* dt = static_cast<GstDateTime*>(g_value_get_boxed(val));
+            auto* dt = static_cast<GstDateTime*>(g_value_get_boxed(val));
             gchar* dtStr = gst_date_time_to_iso8601_string(dt);
             g_print("\t%20s : %s\n", tag, dtStr);
             g_free(dtStr);
         } else {
             g_print("\t%20s : tag of type '%s'\n", tag, G_VALUE_TYPE_NAME(val));
         }
+    }
+}
+
+gboolean
+printCapsField(const GQuark field, const GValue* value, gpointer prefix)
+{
+    gchar* str = gst_value_serialize(value);
+    g_print("%s  %15s: %s\n", static_cast<gchar*>(prefix), g_quark_to_string(field), str);
+    g_free(str);
+    return TRUE;
+}
+
+void
+printCaps(const GstCaps* caps, const gchar* prefix)
+{
+    g_return_if_fail(caps != nullptr);
+
+    if (gst_caps_is_any(caps)) {
+        g_print("%sANY\n", prefix);
+        return;
+    }
+    if (gst_caps_is_empty(caps)) {
+        g_print("%sEMPTY\n", prefix);
+        return;
+    }
+
+    for (guint i = 0; i < gst_caps_get_size(caps); i++) {
+        GstStructure* structure = gst_caps_get_structure(caps, i);
+        g_print("%s%s\n", prefix, gst_structure_get_name(structure));
+        gst_structure_foreach(structure, printCapsField, gpointer(prefix));
     }
 }
 
@@ -75,7 +105,7 @@ printAllFactories()
     g_assert_nonnull(registry);
     GList* list = gst_registry_get_feature_list(registry, GST_TYPE_ELEMENT_FACTORY);
     g_assert_nonnull(list);
-    g_list_foreach(list, GFunc(&printFeature), nullptr);
+    g_list_foreach(list, GFunc(&printRegistryFeature), nullptr);
     gst_plugin_feature_list_free(list);
 }
 
@@ -101,7 +131,7 @@ printAllStreamTags(const std::filesystem::path& path)
     g_assert_nonnull(pipe);
     gst_bin_add(GST_BIN(pipe), sink);
 
-    g_signal_connect(dec, "pad-added", G_CALLBACK(onGettingTagsPadAdded), sink);
+    g_signal_connect(dec, "pad-added", G_CALLBACK(onGettingStreamTagsPadAdded), sink);
     gst_element_set_state(pipe, GST_STATE_PAUSED);
 
     GstMessage* msg{};
@@ -119,7 +149,7 @@ printAllStreamTags(const std::filesystem::path& path)
         gst_message_parse_tag(msg, &tags);
 
         g_print("Got tags from element %s:\n", GST_OBJECT_NAME(msg->src));
-        gst_tag_list_foreach(tags, printOneTag, nullptr);
+        gst_tag_list_foreach(tags, printOneStreamTag, nullptr);
         g_print("\n");
         gst_tag_list_unref(tags);
 
@@ -137,4 +167,70 @@ printAllStreamTags(const std::filesystem::path& path)
     gst_element_set_state(pipe, GST_STATE_NULL);
     gst_object_unref(pipe);
     g_free(uri);
+}
+
+void
+printAllPadCaps(GstElement* element, const gchar* padName)
+{
+    /* Retrieve pad */
+    GstPad* pad = gst_element_get_static_pad(element, padName);
+    if (not pad) {
+        g_printerr("Could not retrieve pad '%s'\n", padName);
+        return;
+    }
+
+    /* Retrieve negotiated caps (or acceptable caps if negotiation is not finished yet) */
+    GstCaps* caps = gst_pad_get_current_caps(pad);
+    if (not caps) {
+        caps = gst_pad_query_caps(pad, nullptr);
+    }
+
+    /* Print and free */
+    g_print("Caps for the %s pad:\n", padName);
+    printCaps(caps, "   ");
+    gst_caps_unref(caps);
+    gst_object_unref(pad);
+}
+
+void
+printPadTemplatesInfo(GstElementFactory* factory)
+{
+    g_print("Pad Templates for %s:\n", gst_element_factory_get_longname(factory));
+    if (not gst_element_factory_get_num_pad_templates(factory)) {
+        g_print("  none\n");
+        return;
+    }
+
+    const GList* pads = gst_element_factory_get_static_pad_templates(factory);
+    while (pads) {
+        auto* padTemplate = static_cast<GstStaticPadTemplate*>(pads->data);
+        pads = g_list_next(pads);
+
+        if (padTemplate->direction == GST_PAD_SRC) {
+            g_print("  SRC template: '%s'\n", padTemplate->name_template);
+        } else if (padTemplate->direction == GST_PAD_SINK) {
+            g_print("  SINK template: '%s'\n", padTemplate->name_template);
+        } else {
+            g_print("  Unknown template: '%s'\n", padTemplate->name_template);
+        }
+
+        if (padTemplate->presence == GST_PAD_ALWAYS) {
+            g_print("    Availability: Always\n");
+        } else if (padTemplate->presence == GST_PAD_SOMETIMES) {
+            g_print("    Availability: Always\n");
+        } else if (padTemplate->presence == GST_PAD_REQUEST) {
+            g_print("    Availability: On request\n");
+        } else {
+            g_print("    Availability: Unknown\n");
+        }
+
+        if (padTemplate->static_caps.string) {
+            g_print("    Capabilities:\n");
+            GstCaps* caps = gst_static_caps_get(&padTemplate->static_caps);
+            printCaps(caps, "      ");
+            gst_caps_unref(caps);
+        }
+
+        g_print("\n");
+    }
 }
