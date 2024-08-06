@@ -107,7 +107,7 @@ main(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 
-void
+static void
 handlePadAdded(GstElement* src, GstPad* srcPad, void* /*data*/)
 {
     g_print("Received new pad '%s' from '%s'.\n", GST_PAD_NAME(srcPad), GST_ELEMENT_NAME(src));
@@ -143,7 +143,7 @@ handlePadAdded(GstElement* src, GstPad* srcPad, void* /*data*/)
     }
 }
 
-void
+static void
 handleMessages()
 {
     bool terminate{};
