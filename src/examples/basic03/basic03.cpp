@@ -139,7 +139,7 @@ handlePadAdded(GstElement* src, GstPad* srcPad, void* /*data*/)
             }
         }
     } else {
-        g_print ("Ignore pad with '%s' type. Ignoring.\n", newPadType);
+        g_print("Ignore pad with '%s' type. Ignoring.\n", newPadType);
     }
 }
 
@@ -148,11 +148,11 @@ handleMessages()
 {
     bool terminate{};
     constexpr auto targetTypes = static_cast<GstMessageType>(
-        GST_MESSAGE_STATE_CHANGED | GST_MESSAGE_ERROR | GST_MESSAGE_EOS // List of target types
-    );
+        GST_MESSAGE_STATE_CHANGED | GST_MESSAGE_ERROR | GST_MESSAGE_EOS | GST_MESSAGE_NEW_CLOCK
+        | GST_MESSAGE_CLOCK_LOST);
     GstBus* bus = gst_element_get_bus(pipeline);
     do {
-        if (GstMessage* msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, targetTypes);
+        if (GstMessage* msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ANY);
             msg != nullptr) {
             GError* err{};
             gchar* debugInfo{};
@@ -171,6 +171,18 @@ handleMessages()
                 g_print("EoS reached.\n");
                 terminate = true;
                 break;
+            case GST_MESSAGE_NEW_CLOCK: {
+                GstClock* clock{};
+                gst_message_parse_new_clock(msg, &clock);
+                if (clock != nullptr) {
+                    GstClockTime time = gst_clock_get_time(clock);
+                    g_print("New Clock received: %" GST_TIME_FORMAT "\n", GST_TIME_ARGS(time));
+                }
+                break;
+            }
+            case GST_MESSAGE_CLOCK_LOST:
+                g_print("Clock was lost.\n");
+                break;
             case GST_MESSAGE_STATE_CHANGED:
                 /* We are only interested in state-changed messages from the pipeline */
                 if (GST_MESSAGE_SRC(msg) == GST_OBJECT(pipeline)) {
@@ -182,8 +194,6 @@ handleMessages()
                 }
                 break;
             default:
-                /* We should not reach here */
-                g_printerr("Unexpected message received.\n");
                 break;
             }
             gst_message_unref(msg);
