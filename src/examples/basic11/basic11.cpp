@@ -4,6 +4,9 @@
 
 #include <gst/video/colorbalance.h>
 
+/**
+ * Example 11: Using interfaces to leverage additional object functionality
+ */
 static GstElement* pipeline{};
 
 static void
