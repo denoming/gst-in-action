@@ -180,6 +180,9 @@ handleMessages()
                 }
                 break;
             }
+            case GST_MESSAGE_LATENCY:
+                g_print("Latency is changed.\n");
+                break;
             case GST_MESSAGE_CLOCK_LOST:
                 g_print("Clock was lost.\n");
                 break;
