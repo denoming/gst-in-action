@@ -3,13 +3,5 @@
     "kind": "git",
     "baseline": "6f29f12e82a8293156836ad81cc9bf5af41fe836",
     "repository": "https://github.com/microsoft/vcpkg"
-  },
-  "registries": [
-    {
-      "kind": "git",
-      "baseline": "74d793e1ff3d71bef15c743150695d7cd9862df1",
-      "repository": "git@github.com:denoming/vcpkg-registry.git",
-      "packages": [ "jarvisto" ]
-    }
-  ]
+  }
 }

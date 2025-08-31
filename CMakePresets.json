@@ -15,10 +15,6 @@
       "inherits": ["dc-debug-vcpkg-dynamic"],
       "binaryDir": "build-debug",
       "displayName": "Debug - Vcpkg",
-      "cacheVariables": {
-        "NOVUMS_ENABLE_LOGGING": true,
-        "NOVUMS_ENABLE_TESTS": true
-      },
       "warnings": {
         "dev": false
       }
@@ -28,9 +24,6 @@
       "inherits": ["dc-release-vcpkg-dynamic"],
       "binaryDir": "build-release",
       "displayName": "Release - Vcpkg",
-      "cacheVariables": {
-        "NOVUMS_ENABLE_LOGGING": true
-      },
       "warnings": {
         "dev": false
       }
