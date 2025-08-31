@@ -1,0 +1,39 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "dc-scripts",
+      "hidden": true,
+      "environment": {
+        "PATH": "${sourceDir}/scripts:$penv{PATH}"
+      }
+    },
+    {
+      "name": "dc-debug",
+      "hidden": true,
+      "inherits": ["dc-scripts"],
+      "displayName": "Debug",
+      "generator": "Ninja",
+      "binaryDir": "build-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "dc-release",
+      "hidden": true,
+      "inherits": ["dc-scripts"],
+      "displayName": "Release",
+      "generator": "Ninja",
+      "binaryDir": "build-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "include": [
+    "LegacyPresets.json"
+  ],
+  "configurePresets": [
+    {
+      "name": "dc-vcpkg",
+      "hidden": true,
+      "environment": {
+        "VCPKG_ROOT": "$env{HOME}/.local/opt/vcpkg"
+      },
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+    },
+    {
+      "name": "dc-debug-vcpkg",
+      "hidden": true,
+      "inherits": ["dc-debug", "dc-vcpkg"],
+      "displayName": "Debug - Vcpkg",
+      "binaryDir": "build-debug-vcpkg"
+    },
+    {
+      "name": "dc-debug-vcpkg-dynamic",
+      "hidden": true,
+      "inherits": ["dc-debug-vcpkg"],
+      "displayName": "Debug - Vcpkg (dynamic)",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+      }
+    },
+    {
+      "name": "dc-release-vcpkg",
+      "hidden": true,
+      "inherits": ["dc-release", "dc-vcpkg"],
+      "displayName": "Release - Vcpkg",
+      "binaryDir": "build-release-vcpkg"
+    },
+    {
+      "name": "dc-release-vcpkg-dynamic",
+      "hidden": true,
+      "inherits": ["dc-release-vcpkg"],
+      "displayName": "Release - Vcpkg (dynamic)",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+      }
+    }
+  ]
+}

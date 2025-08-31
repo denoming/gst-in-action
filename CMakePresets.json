@@ -1,0 +1,83 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "include": [
+    "cmake/presets/LegacyPresets.json",
+    "cmake/presets/VcpkgPresets.json"
+  ],
+  "configurePresets": [
+    {
+      "name": "debug",
+      "inherits": ["dc-debug-vcpkg-dynamic"],
+      "binaryDir": "build-debug",
+      "displayName": "Debug - Vcpkg",
+      "cacheVariables": {
+        "NOVUMS_ENABLE_LOGGING": true,
+        "NOVUMS_ENABLE_TESTS": true
+      },
+      "warnings": {
+        "dev": false
+      }
+    },
+    {
+      "name": "release",
+      "inherits": ["dc-release-vcpkg-dynamic"],
+      "binaryDir": "build-release",
+      "displayName": "Release - Vcpkg",
+      "cacheVariables": {
+        "NOVUMS_ENABLE_LOGGING": true
+      },
+      "warnings": {
+        "dev": false
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "displayName": "Build debug",
+      "configurePreset": "debug",
+      "jobs": 0
+    },
+    {
+      "name": "release",
+      "displayName": "Build release",
+      "configurePreset": "release",
+      "jobs": 0
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "debug",
+      "displayName": "Debug workflow",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "debug"
+        },
+        {
+          "type": "build",
+          "name": "debug"
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "displayName": "Release workflow",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "release"
+        },
+        {
+          "type": "build",
+          "name": "release"
+        }
+      ]
+    }
+  ]
+}
